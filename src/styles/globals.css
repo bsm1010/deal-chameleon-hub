@@ -110,3 +110,19 @@
     border-radius: 8px;
   }
 }
+
+/* Hide Lovable platform badge */
+a[href*="lovable"],
+div[data-lovable],
+div[class*="lovable"],
+a[class*="lovable"],
+[style*="position: fixed"][style*="bottom"],
+div[style*="z-index: 99999"],
+a[style*="z-index: 99999"],
+div[class*="badge"][style*="bottom"],
+a[class*="badge"][style*="bottom"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
