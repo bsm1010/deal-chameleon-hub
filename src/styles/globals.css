@@ -111,12 +111,11 @@
   }
 }
 
-/* Hide Lovable platform badge */
+/* Hide Lovable platform badge and widget completely */
 a[href*="lovable"],
 div[data-lovable],
 div[class*="lovable"],
 a[class*="lovable"],
-[style*="position: fixed"][style*="bottom"],
 div[style*="z-index: 99999"],
 a[style*="z-index: 99999"],
 div[class*="badge"][style*="bottom"],
@@ -125,4 +124,10 @@ a[class*="badge"][style*="bottom"] {
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
 }
