@@ -1,6 +1,7 @@
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "@/hooks/useAuth";
 import AppRouter from "@/router";
 import "@/lib/i18n";
 import "@/styles/globals.css";
@@ -18,7 +19,9 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster position="top-center" richColors />
-      <AppRouter />
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
