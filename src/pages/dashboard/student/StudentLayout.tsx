@@ -28,7 +28,7 @@ const navItems = [
 ];
 
 interface StudentLayoutProps {
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 export default function StudentLayout({ children }: StudentLayoutProps) {
