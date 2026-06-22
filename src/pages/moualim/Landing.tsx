@@ -174,7 +174,7 @@ export default function Landing() {
         console.error("Error fetching tutors:", error);
         setTutors(placeholderTutors);
       } else {
-        setTutors(data && data.length > 0 ? data : placeholderTutors);
+        setTutors((data && data.length > 0 ? data : placeholderTutors) as any);
       }
     } catch {
       setTutors(placeholderTutors);
@@ -199,17 +199,17 @@ export default function Landing() {
     }
   };
 
-  const containerVariants = {
+  const containerVariants: any = {
     hidden: { opacity: 0, y: 40 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
   };
 
-  const staggerContainer = {
+  const staggerContainer: any = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
-  const staggerItem = {
+  const staggerItem: any = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };

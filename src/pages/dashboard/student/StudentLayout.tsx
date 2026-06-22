@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, Outlet } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
@@ -28,7 +28,7 @@ const navItems = [
 ];
 
 interface StudentLayoutProps {
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 export default function StudentLayout({ children }: StudentLayoutProps) {

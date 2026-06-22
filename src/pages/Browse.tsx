@@ -291,7 +291,7 @@ function TutorCard({ tutor, t }: { tutor: TutorProfile; t: (key: string) => stri
           </span>
           {tutor.next_available_slot && (
             <span className="text-xs text-muted-foreground">
-              {t("browse.availableFrom", {
+              {(t as any)("browse.availableFrom", {
                 time: new Date(tutor.next_available_slot).toLocaleDateString("ar-DZ"),
               })}
             </span>
