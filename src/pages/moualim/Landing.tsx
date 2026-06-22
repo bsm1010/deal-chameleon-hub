@@ -174,7 +174,7 @@ export default function Landing() {
         console.error("Error fetching tutors:", error);
         setTutors(placeholderTutors);
       } else {
-        setTutors(data && data.length > 0 ? data : placeholderTutors);
+        setTutors((data && data.length > 0 ? data : placeholderTutors) as any);
       }
     } catch {
       setTutors(placeholderTutors);
