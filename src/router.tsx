@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { Spinner } from "@/components/ui/Spinner";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -102,5 +102,5 @@ const router = createBrowserRouter([
 ]);
 
 export default function AppRouter() {
-  return <createBrowserRouter.Component router={router} />;
+  return <RouterProvider router={router} />;
 }
