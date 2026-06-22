@@ -14,8 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Outfit", "sans-serif"],
-        display: ["Outfit", "sans-serif"],
+        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+        display: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+        arabic: ["Inter", "Noto Sans Arabic", "Segoe UI", "Tahoma", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -51,35 +52,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
-        },
-        stage: {
-          prospect: "hsl(var(--stage-prospect))",
-          qualified: "hsl(var(--stage-qualified))",
-          proposal: "hsl(var(--stage-proposal))",
-          negotiation: "hsl(var(--stage-negotiation))",
-          won: "hsl(var(--stage-won))",
-          lost: "hsl(var(--stage-lost))",
-        },
-        "surface-mint": {
-          DEFAULT: "hsl(var(--surface-mint))",
-          strong: "hsl(var(--surface-mint-strong))",
-        },
-        "teal-data": "hsl(var(--teal-data))",
-        "teal-dark": "hsl(var(--teal-dark))",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        card: "12px",
+        button: "8px",
       },
       keyframes: {
         "accordion-down": {
