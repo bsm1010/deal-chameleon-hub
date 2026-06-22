@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useActivities } from "@/hooks/useActivities";
 import { useTasks } from "@/hooks/useTasks";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";

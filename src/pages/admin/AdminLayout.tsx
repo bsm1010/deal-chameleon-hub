@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { GraduationCap, BarChart3, Users, GraduationCapIcon, Wallet, BookOpen, Bell, LogOut } from "lucide-react";
 
 const navItems = [

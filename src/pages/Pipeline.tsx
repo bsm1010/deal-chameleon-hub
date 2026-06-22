@@ -9,7 +9,7 @@ import { DealDetailSheet } from "@/components/pipeline/DealDetailSheet";
 import { PipelineFilters } from "@/components/pipeline/PipelineFilters";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { PageBanner } from "@/components/PageBanner";
 import { Plus, Kanban } from "lucide-react";

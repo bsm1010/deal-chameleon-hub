@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 const subjects = [
   { id: "math", name: "الرياضيات", nameKey: "subjects.math", icon: "📐", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
