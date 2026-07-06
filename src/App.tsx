@@ -14,6 +14,10 @@ import DashboardLayout from "@/pages/dashboard/DashboardLayout";
 import DashboardHome from "@/pages/dashboard/DashboardHome";
 import RestaurantProfile from "@/pages/dashboard/RestaurantProfile";
 import MenuBuilder from "@/pages/dashboard/MenuBuilder";
+import Analytics from "@/pages/dashboard/Analytics";
+import Reviews from "@/pages/dashboard/Reviews";
+import QRCodePage from "@/pages/dashboard/QRCode";
+import Settings from "@/pages/dashboard/Settings";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +56,10 @@ export default function App() {
               <Route index element={<DashboardHome />} />
               <Route path="profile" element={<RestaurantProfile />} />
               <Route path="menu" element={<MenuBuilder />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="reviews" element={<Reviews />} />
+              <Route path="qrcode" element={<QRCodePage />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
             <Route
               path="*"

@@ -15,12 +15,15 @@ export interface Restaurant {
   commune: string | null;
   address: string | null;
   phone: string | null;
+  website: string | null;
+  instagram: string | null;
   cover_photo: string | null;
   logo: string | null;
   opening_hours: string | null;
   latitude: number | null;
   longitude: number | null;
   is_active: boolean;
+  reviews_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -44,6 +47,55 @@ export interface MenuItem {
   order_index: number;
 }
 
+export interface Review {
+  id: string;
+  restaurant_id: string;
+  customer_name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
+export interface ReviewReply {
+  id: string;
+  review_id: string;
+  owner_name: string;
+  reply: string;
+  created_at: string;
+}
+
+export interface MenuView {
+  id: string;
+  restaurant_id: string;
+  item_id: string | null;
+  category_id: string | null;
+  viewed_at: string;
+}
+
+export interface MapClick {
+  id: string;
+  restaurant_id: string;
+  clicked_at: string;
+}
+
+export interface DayHours {
+  open: boolean;
+  from: string;
+  to: string;
+}
+
+export const EMPTY_HOURS: DayHours = { open: false, from: "09:00", to: "22:00" };
+
+export const DAYS_AR = [
+  { key: "sat", label: "السبت" },
+  { key: "sun", label: "الأحد" },
+  { key: "mon", label: "الاثنين" },
+  { key: "tue", label: "الثلاثاء" },
+  { key: "wed", label: "الأربعاء" },
+  { key: "thu", label: "الخميس" },
+  { key: "fri", label: "الجمعة" },
+] as const;
+
 export const CATEGORIES = [
   "فاست فود",
   "مشاوي",
@@ -51,6 +103,8 @@ export const CATEGORIES = [
   "كافيه",
   "مطعم عائلي",
   "حلويات",
+  "سوشي",
+  "برغر",
 ] as const;
 
 export const WILAYAS = [
@@ -59,7 +113,7 @@ export const WILAYAS = [
   "الجلفة","جيجل","سطيف","سعيدة","سكيكدة","سيدي بلعباس","عنابة","قالمة",
   "قسنطينة","المدية","مستغانم","المسيلة","معسكر","ورقلة","وهران","البيض",
   "إليزي","برج بوعريريج","بومرداس","الشريعة","تيبازة","تيسمسيلت","الوادي",
-  "خنشلة","سوق أهراس","تaza","جانت","المغير","النعامة","عين تموشنت",
+  "خنشلة","سوق أهراس","تازة","جانت","المغير","النعامة","عين تموشنت",
   "غرداية","غليزان","تمنراست","برج باجي مختار","أولاد جلال","بني عباس",
   "عين صالح","عين قزام","توقرت","جانت","المغير","النعامة",
 ] as const;

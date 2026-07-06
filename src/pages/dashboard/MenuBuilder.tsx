@@ -1,61 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useOwnerRestaurant, useMenuCategories, useMenuItems } from "@/hooks/useRestaurant";
 import { supabase } from "@/lib/supabase";
-import type { Restaurant, MenuCategory, MenuItem } from "@/types";
-
-function useOwnerRestaurant(userId: string | undefined) {
-  return useQuery({
-    queryKey: ["owner-restaurant", userId],
-    queryFn: async () => {
-      if (!userId) return null;
-      const { data, error } = await supabase
-        .from("restaurants")
-        .select("*")
-        .eq("owner_id", userId)
-        .single();
-      if (error) return null;
-      return data as Restaurant;
-    },
-    enabled: !!userId,
-  });
-}
-
-function useMenuCategories(restaurantId: string | undefined) {
-  return useQuery({
-    queryKey: ["menu_categories", restaurantId],
-    queryFn: async () => {
-      if (!restaurantId) return [];
-      const { data, error } = await supabase
-        .from("menu_categories")
-        .select("*")
-        .eq("restaurant_id", restaurantId)
-        .order("order_index");
-      if (error) return [];
-      return (data ?? []) as MenuCategory[];
-    },
-    enabled: !!restaurantId,
-  });
-}
-
-function useMenuItems(restaurantId: string | undefined) {
-  return useQuery({
-    queryKey: ["menu_items", restaurantId],
-    queryFn: async () => {
-      if (!restaurantId) return [];
-      const { data, error } = await supabase
-        .from("menu_items")
-        .select("*")
-        .eq("restaurant_id", restaurantId)
-        .order("order_index");
-      if (error) return [];
-      return (data ?? []) as MenuItem[];
-    },
-    enabled: !!restaurantId,
-  });
-}
+import { PlusIcon, TrashIcon, ChevronUpIcon, ChevronDownIcon, GripIcon, StoreIcon, UtensilsIcon } from "@/lib/icons";
+import type { MenuCategory, MenuItem } from "@/types";
 
 interface LocalCategory extends MenuCategory {
   items: LocalItem[];
@@ -69,23 +20,6 @@ interface LocalItem extends MenuItem {
   _new?: boolean;
 }
 
-function BuilderSkeleton() {
-  return (
-    <div className="animate-pulse space-y-6">
-      <div className="h-8 bg-gray-200 rounded w-40" />
-      <div className="space-y-4">
-        {[1, 2].map((i) => (
-          <div key={i} className="bg-white rounded-xl p-5 space-y-3">
-            <div className="h-6 bg-gray-200 rounded w-32" />
-            <div className="h-4 bg-gray-200 rounded w-full" />
-            <div className="h-4 bg-gray-200 rounded w-3/4" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function MenuBuilder() {
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
@@ -96,6 +30,8 @@ export default function MenuBuilder() {
 
   const [localCategories, setLocalCategories] = useState<LocalCategory[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
+  const [selectedCat, setSelectedCat] = useState<number>(0);
+  const [editingItem, setEditingItem] = useState<{ catIndex: number; itemIndex: number } | null>(null);
 
   useEffect(() => {
     if (remoteCategories && remoteItems) {
@@ -112,7 +48,6 @@ export default function MenuBuilder() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!restaurant) return;
-
       for (const cat of localCategories) {
         if (cat._deleted) {
           if (!cat._new) {
@@ -121,55 +56,30 @@ export default function MenuBuilder() {
           }
           continue;
         }
-
         let catId = cat.id;
-
         if (cat._new) {
           const { data: newCat, error: catErr } = await supabase
-            .from("menu_categories")
-            .insert({
-              restaurant_id: restaurant.id,
-              name: cat.name,
-              order_index: cat.order_index,
-            })
-            .select()
-            .single();
+            .from("menu_categories").insert({ restaurant_id: restaurant.id, name: cat.name, order_index: cat.order_index }).select().single();
           if (catErr) throw catErr;
           catId = newCat.id;
         } else {
-          await supabase
-            .from("menu_categories")
-            .update({ name: cat.name, order_index: cat.order_index })
-            .eq("id", cat.id);
+          await supabase.from("menu_categories").update({ name: cat.name, order_index: cat.order_index }).eq("id", cat.id);
         }
-
         for (const item of cat.items) {
           if (item._deleted) {
-            if (!item._new) {
-              await supabase.from("menu_items").delete().eq("id", item.id);
-            }
+            if (!item._new) await supabase.from("menu_items").delete().eq("id", item.id);
             continue;
           }
-
-          const itemPayload = {
-            category_id: catId,
-            restaurant_id: restaurant.id,
-            name: item.name,
-            description: item.description || null,
-            price: item.price,
-            photo: item.photo || null,
-            is_available: item.is_available,
-            order_index: item.order_index,
+          const payload = {
+            category_id: catId, restaurant_id: restaurant.id, name: item.name,
+            description: item.description || null, price: item.price, photo: item.photo || null,
+            is_available: item.is_available, order_index: item.order_index,
           };
-
           if (item._new) {
-            const { error } = await supabase.from("menu_items").insert(itemPayload);
+            const { error } = await supabase.from("menu_items").insert(payload);
             if (error) throw error;
           } else {
-            const { error } = await supabase
-              .from("menu_items")
-              .update(itemPayload)
-              .eq("id", item.id);
+            const { error } = await supabase.from("menu_items").update(payload).eq("id", item.id);
             if (error) throw error;
           }
         }
@@ -181,372 +91,295 @@ export default function MenuBuilder() {
       await queryClient.invalidateQueries({ queryKey: ["menu_categories", restaurant?.id] });
       await queryClient.invalidateQueries({ queryKey: ["menu_items", restaurant?.id] });
     },
-    onError: () => {
-      toast.error("حدث خطأ أثناء الحفظ. حاول مرة أخرى.");
-    },
+    onError: () => toast.error("حدث خطأ أثناء الحفظ"),
   });
 
   function addCategory() {
     const name = prompt("اسم القسم الجديد:");
     if (!name?.trim()) return;
-
-    const newCat: LocalCategory = {
-      id: `new-${Date.now()}`,
-      restaurant_id: restaurant?.id ?? "",
-      name: name.trim(),
-      order_index: localCategories.length,
-      _new: true,
-      items: [],
-    };
-
-    setLocalCategories((prev) => [...prev, newCat]);
+    setLocalCategories((prev) => [...prev, {
+      id: `new-${Date.now()}`, restaurant_id: restaurant?.id ?? "",
+      name: name.trim(), order_index: prev.length, _new: true, items: [],
+    }]);
     setHasChanges(true);
   }
 
   function deleteCategory(catIndex: number) {
     if (!confirm("هل أنت متأكد من حذف هذا القسم وجميع أطباقه؟")) return;
-    setLocalCategories((prev) =>
-      prev.map((cat, i) => (i === catIndex ? { ...cat, _deleted: true } : cat))
-    );
+    setLocalCategories((prev) => prev.map((cat, i) => i === catIndex ? { ...cat, _deleted: true } : cat));
     setHasChanges(true);
   }
 
   function updateCategoryName(catIndex: number, name: string) {
-    setLocalCategories((prev) =>
-      prev.map((cat, i) => (i === catIndex ? { ...cat, name } : cat))
-    );
+    setLocalCategories((prev) => prev.map((cat, i) => i === catIndex ? { ...cat, name } : cat));
+    setHasChanges(true);
+  }
+
+  function moveCategory(catIndex: number, dir: -1 | 1) {
+    setLocalCategories((prev) => {
+      const arr = [...prev];
+      const target = catIndex + dir;
+      if (target < 0 || target >= arr.length) return prev;
+      const temp = arr[catIndex];
+      arr[catIndex] = arr[target];
+      arr[target] = temp;
+      return arr.map((c, i) => ({ ...c, order_index: i }));
+    });
     setHasChanges(true);
   }
 
   function addItem(catIndex: number) {
     const newItem: LocalItem = {
-      id: `new-${Date.now()}`,
-      category_id: localCategories[catIndex].id,
-      restaurant_id: restaurant?.id ?? "",
-      name: "",
-      description: null,
-      price: 0,
-      photo: null,
-      is_available: true,
-      order_index: localCategories[catIndex].items.length,
-      _new: true,
-      _dirty: true,
+      id: `new-${Date.now()}`, category_id: localCategories[catIndex].id,
+      restaurant_id: restaurant?.id ?? "", name: "", description: null,
+      price: 0, photo: null, is_available: true,
+      order_index: localCategories[catIndex].items.length, _new: true, _dirty: true,
     };
-
-    setLocalCategories((prev) =>
-      prev.map((cat, i) =>
-        i === catIndex ? { ...cat, items: [...cat.items, newItem] } : cat
-      )
-    );
+    setLocalCategories((prev) => prev.map((cat, i) =>
+      i === catIndex ? { ...cat, items: [...cat.items, newItem] } : cat
+    ));
     setHasChanges(true);
+    setEditingItem({ catIndex, itemIndex: localCategories[catIndex].items.length });
   }
 
   function updateItem(catIndex: number, itemIndex: number, field: keyof LocalItem, value: string | number | boolean | null) {
-    setLocalCategories((prev) =>
-      prev.map((cat, ci) => {
-        if (ci !== catIndex) return cat;
-        return {
-          ...cat,
-          items: cat.items.map((item, ii) =>
-            ii === itemIndex ? { ...item, [field]: value, _dirty: true } : item
-          ),
-        };
-      })
-    );
+    setLocalCategories((prev) => prev.map((cat, ci) => {
+      if (ci !== catIndex) return cat;
+      return { ...cat, items: cat.items.map((item, ii) => ii === itemIndex ? { ...item, [field]: value, _dirty: true } : item) };
+    }));
     setHasChanges(true);
   }
 
   function deleteItem(catIndex: number, itemIndex: number) {
-    setLocalCategories((prev) =>
-      prev.map((cat, ci) => {
-        if (ci !== catIndex) return cat;
-        return {
-          ...cat,
-          items: cat.items.map((item, ii) =>
-            ii === itemIndex ? { ...item, _deleted: true } : item
-          ),
-        };
-      })
-    );
+    if (!confirm("هل أنت متأكد من حذف هذا الطبق؟")) return;
+    setLocalCategories((prev) => prev.map((cat, ci) => {
+      if (ci !== catIndex) return cat;
+      return { ...cat, items: cat.items.map((item, ii) => ii === itemIndex ? { ...item, _deleted: true } : item) };
+    }));
+    setEditingItem(null);
     setHasChanges(true);
   }
 
-  function moveItem(catIndex: number, itemIndex: number, direction: -1 | 1) {
-    setLocalCategories((prev) =>
-      prev.map((cat, ci) => {
-        if (ci !== catIndex) return cat;
-        const newItems = [...cat.items];
-        const targetIndex = itemIndex + direction;
-        if (targetIndex < 0 || targetIndex >= newItems.length) return cat;
-        const temp = newItems[itemIndex];
-        newItems[itemIndex] = newItems[targetIndex];
-        newItems[targetIndex] = temp;
-        return {
-          ...cat,
-          items: newItems.map((item, i) => ({ ...item, order_index: i })),
-        };
-      })
-    );
+  function moveItem(catIndex: number, itemIndex: number, dir: -1 | 1) {
+    setLocalCategories((prev) => prev.map((cat, ci) => {
+      if (ci !== catIndex) return cat;
+      const items = [...cat.items];
+      const target = itemIndex + dir;
+      if (target < 0 || target >= items.length) return cat;
+      [items[itemIndex], items[target]] = [items[target], items[itemIndex]];
+      return { ...cat, items: items.map((item, i) => ({ ...item, order_index: i })) };
+    }));
     setHasChanges(true);
   }
 
   const isLoading = authLoading || loadingRestaurant || loadingCategories || loadingItems;
 
   if (isLoading) {
-    return (
-      <div dir="rtl" className="min-h-screen bg-[#F8F8F8] p-6 sm:p-8">
-        <div className="max-w-3xl mx-auto">
-          <BuilderSkeleton />
-        </div>
-      </div>
-    );
+    return <div className="space-y-6"><div className="h-8 bg-gray-200 rounded w-40 animate-pulse" /><div className="bg-white rounded-xl h-64 animate-pulse" /></div>;
   }
 
   if (!restaurant) {
     return (
-      <div dir="rtl" className="min-h-screen bg-[#F8F8F8]">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-white rounded-2xl p-8 text-center">
-            <div className="w-20 h-20 mx-auto mb-6 bg-orange-50 rounded-full flex items-center justify-center">
-              <svg className="w-10 h-10 text-[#FF6B35]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-              </svg>
-            </div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">أنشئ ملف مطعمك أولاً</h2>
-            <p className="text-gray-500 mb-6">
-              تحتاج إلى إنشاء ملف مطعم قبل بناء القائمة
-            </p>
-            <Link
-              to="/dashboard/profile"
-              className="inline-block px-8 py-3 bg-[#FF6B35] text-white rounded-xl font-bold hover:bg-[#e55a2b] transition-colors"
-            >
-              إنشاء ملف المطعم
-            </Link>
-          </div>
+      <div className="bg-white rounded-2xl p-8 text-center max-w-lg mx-auto mt-8">
+        <div className="w-20 h-20 mx-auto mb-6 bg-orange-50 rounded-full flex items-center justify-center">
+          <StoreIcon className="h-10 w-10 text-[#FF6B35]" />
         </div>
+        <h2 className="text-xl font-bold text-gray-800 mb-2">أنشئ ملف مطعمك أولاً</h2>
+        <p className="text-gray-500 mb-6">تحتاج إلى إنشاء ملف مطعم قبل بناء القائمة</p>
+        <Link to="/dashboard/profile" className="inline-block px-8 py-3 bg-[#FF6B35] text-white rounded-xl font-bold hover:bg-[#e55a2b] transition-colors">
+          إنشاء ملف المطعم
+        </Link>
       </div>
     );
   }
 
   const visibleCategories = localCategories.filter((cat) => !cat._deleted);
+  const activeCat = visibleCategories[selectedCat];
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#F8F8F8]">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-[#1A1A2E]">بناء القائمة</h1>
-          {hasChanges && (
-            <button
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending}
-              className="px-6 py-2.5 bg-[#FF6B35] text-white rounded-xl font-bold hover:bg-[#e55a2b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saveMutation.isPending ? "جاري الحفظ..." : "حفظ"}
-            </button>
-          )}
-        </div>
-
-        {/* ADD CATEGORY BUTTON */}
-        <button
-          onClick={addCategory}
-          className="w-full mb-6 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-medium hover:border-[#FF6B35] hover:text-[#FF6B35] transition-colors"
-        >
-          + إضافة قسم
-        </button>
-
-        {/* CATEGORIES */}
-        {visibleCategories.length === 0 && (
-          <div className="text-center py-12 text-gray-400">
-            <svg className="w-16 h-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
-            <p className="text-lg">أضف أقساماً لبناء قائمتك</p>
-          </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-[#1A1A2E]">قائمتي</h1>
+        {hasChanges && (
+          <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}
+            className="px-6 py-2.5 bg-[#FF6B35] text-white rounded-xl font-bold hover:bg-[#e55a2b] transition-colors disabled:opacity-50 text-sm">
+            {saveMutation.isPending ? "جاري الحفظ..." : "حفظ"}
+          </button>
         )}
+      </div>
 
-        {localCategories.map((cat, catIndex) => {
-          if (cat._deleted) return null;
-          const visibleItems = cat.items.filter((item) => !item._deleted);
-
-          return (
-            <div key={cat.id} className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
-              {/* Category Header */}
-              <div className="flex items-center gap-3 p-4 border-b border-gray-100 bg-gray-50/50">
-                <input
-                  type="text"
-                  value={cat.name}
-                  onChange={(e) => updateCategoryName(catIndex, e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm font-bold text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent bg-white"
-                  placeholder="اسم القسم"
-                />
-                <button
-                  onClick={() => deleteCategory(catIndex)}
-                  className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title="حذف القسم"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
+      <div className="flex gap-4 flex-col lg:flex-row">
+        {/* Left: Categories */}
+        <div className="w-full lg:w-72 flex-shrink-0 space-y-2">
+          <button onClick={addCategory} className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-medium hover:border-[#FF6B35] hover:text-[#FF6B35] transition-colors text-sm flex items-center justify-center gap-2">
+            <PlusIcon className="h-4 w-4" />
+            إضافة قسم
+          </button>
+          {visibleCategories.length === 0 && (
+            <div className="text-center py-8 text-gray-400 text-sm">أضف أقساماً لبناء قائمتك</div>
+          )}
+          {visibleCategories.map((cat, vi) => {
+            const realIndex = localCategories.indexOf(cat);
+            const isActive = vi === selectedCat;
+            const visibleItemCount = cat.items.filter((i) => !i._deleted).length;
+            return (
+              <div key={cat.id} className={`flex items-center gap-1 p-3 rounded-xl cursor-pointer transition-colors ${isActive ? "bg-[#FF6B35] text-white" : "bg-white text-[#1A1A2E] hover:bg-gray-50"}`} onClick={() => setSelectedCat(vi)}>
+                <GripIcon className="h-4 w-4 flex-shrink-0 opacity-40" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm truncate">{cat.name}</p>
+                  <p className="text-xs opacity-60">{visibleItemCount} طبق</p>
+                </div>
+                <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => moveCategory(realIndex, -1)} className="p-0.5 opacity-40 hover:opacity-100"><ChevronUpIcon className="h-3 w-3" /></button>
+                  <button onClick={() => moveCategory(realIndex, 1)} className="p-0.5 opacity-40 hover:opacity-100"><ChevronDownIcon className="h-3 w-3" /></button>
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); deleteCategory(realIndex); }} className="p-1 opacity-40 hover:opacity-100">
+                  <TrashIcon className="h-3.5 w-3.5" />
                 </button>
               </div>
+            );
+          })}
+        </div>
 
-              {/* Items */}
-              <div className="p-4 space-y-4">
-                {visibleItems.length === 0 && (
-                  <p className="text-gray-400 text-sm text-center py-4">لا توجد أطباق بعد</p>
-                )}
+        {/* Right: Items */}
+        <div className="flex-1 space-y-4">
+          {activeCat ? (
+            <>
+              <div className="flex items-center gap-3">
+                <input type="text" value={activeCat.name}
+                  onChange={(e) => {
+                    const realIndex = localCategories.indexOf(activeCat);
+                    updateCategoryName(realIndex, e.target.value);
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 font-bold text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#FF6B35]" />
+              </div>
 
-                {cat.items.map((item, itemIndex) => {
-                  if (item._deleted) return null;
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {activeCat.items.filter((i) => !i._deleted).map((item) => {
+                  const realItemIndex = activeCat.items.indexOf(item);
+                  const realCatIndex = localCategories.indexOf(activeCat);
+                  const isEditing = editingItem?.catIndex === realCatIndex && editingItem?.itemIndex === realItemIndex;
                   return (
-                    <div
-                      key={item.id}
-                      className="border border-gray-100 rounded-lg p-4 space-y-3"
-                    >
-                      <div className="flex items-start gap-3">
-                        {/* Photo preview */}
-                        <div className="w-16 h-16 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-                          {item.photo ? (
-                            <img
-                              src={item.photo}
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-300">
-                              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={1.5}
-                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex-1 space-y-2">
-                          <input
-                            type="url"
-                            value={item.photo ?? ""}
-                            onChange={(e) => updateItem(catIndex, itemIndex, "photo", e.target.value || null)}
-                            className="w-full px-3 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent"
-                            placeholder="رابط الصورة (اختياري)"
-                            dir="ltr"
-                          />
-
-                          <input
-                            type="text"
-                            value={item.name}
-                            onChange={(e) => updateItem(catIndex, itemIndex, "name", e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent"
-                            placeholder="اسم الطبق"
-                          />
-
-                          <textarea
-                            value={item.description ?? ""}
-                            onChange={(e) => updateItem(catIndex, itemIndex, "description", e.target.value || null)}
-                            rows={2}
-                            className="w-full px-3 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent resize-none"
-                            placeholder="وصف الطبق (اختياري)"
-                          />
-
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="number"
-                                min="0"
-                                value={item.price || ""}
-                                onChange={(e) => updateItem(catIndex, itemIndex, "price", parseInt(e.target.value) || 0)}
-                                className="w-28 px-3 py-1.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent"
-                                placeholder="السعر"
-                                dir="ltr"
-                              />
-                              <span className="text-xs text-gray-500">دج</span>
-                            </div>
-
-                            <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer select-none">
-                              <input
-                                type="checkbox"
-                                checked={item.is_available}
-                                onChange={(e) => updateItem(catIndex, itemIndex, "is_available", e.target.checked)}
-                                className="w-4 h-4 rounded border-gray-300 text-[#FF6B35] focus:ring-[#FF6B35]"
-                              />
-                              متوفر
-                            </label>
+                    <div key={item.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                      <div className="h-40 bg-gray-100 relative">
+                        {item.photo ? (
+                          <img src={item.photo} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300">
+                            <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="1.5" /><circle cx="8.5" cy="8.5" r="1.5" strokeWidth="1.5" /><polyline points="21 15 16 10 5 21" strokeWidth="1.5" /></svg>
                           </div>
+                        )}
+                        <div className="absolute top-2 left-2 flex gap-1">
+                          <button onClick={() => moveItem(realCatIndex, realItemIndex, -1)} disabled={realItemIndex === 0} className="w-7 h-7 bg-white/90 rounded-lg flex items-center justify-center disabled:opacity-30"><ChevronUpIcon className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => moveItem(realCatIndex, realItemIndex, 1)} disabled={realItemIndex === activeCat.items.filter((i) => !i._deleted).length - 1} className="w-7 h-7 bg-white/90 rounded-lg flex items-center justify-center disabled:opacity-30"><ChevronDownIcon className="h-3.5 w-3.5" /></button>
                         </div>
-
-                        <div className="flex flex-col gap-1">
-                          <button
-                            onClick={() => moveItem(catIndex, itemIndex, -1)}
-                            disabled={itemIndex === 0}
-                            className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                            title="تحريك لأعلى"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                            </svg>
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <button onClick={() => setEditingItem(isEditing ? null : { catIndex: realCatIndex, itemIndex: realItemIndex })} className="w-7 h-7 bg-white/90 rounded-lg flex items-center justify-center text-[#FF6B35]">
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                           </button>
-                          <button
-                            onClick={() => moveItem(catIndex, itemIndex, 1)}
-                            disabled={itemIndex === visibleItems.length - 1}
-                            className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                            title="تحريك لأسفل"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
+                          <button onClick={() => deleteItem(realCatIndex, realItemIndex)} className="w-7 h-7 bg-white/90 rounded-lg flex items-center justify-center text-red-500">
+                            <TrashIcon className="h-3.5 w-3.5" />
                           </button>
-                          <button
-                            onClick={() => deleteItem(catIndex, itemIndex)}
-                            className="p-1 text-red-400 hover:text-red-600 transition-colors"
-                            title="حذف الطبق"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                              />
-                            </svg>
-                          </button>
+                        </div>
+                        {!item.is_available && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <span className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">غير متوفر</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-bold text-[#1A1A2E]">{item.name || "بدون اسم"}</h3>
+                            {item.description && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.description}</p>}
+                          </div>
+                          <span className="text-[#FF6B35] font-bold text-sm">{item.price} دج</span>
                         </div>
                       </div>
                     </div>
                   );
                 })}
+              </div>
 
-                {/* Add item button */}
-                <button
-                  onClick={() => addItem(catIndex)}
-                  className="w-full py-2.5 border border-dashed border-gray-300 rounded-lg text-gray-400 text-sm font-medium hover:border-[#FF6B35] hover:text-[#FF6B35] transition-colors"
-                >
-                  + إضافة طبق
-                </button>
+              <button onClick={() => addItem(localCategories.indexOf(activeCat))}
+                className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-medium hover:border-[#FF6B35] hover:text-[#FF6B35] transition-colors text-sm flex items-center justify-center gap-2">
+                <PlusIcon className="h-4 w-4" />
+                إضافة طبق
+              </button>
+            </>
+          ) : (
+            <div className="bg-white rounded-xl p-12 text-center text-gray-400">
+              <UtensilsIcon className="h-16 w-16 mx-auto mb-4 opacity-30" />
+              <p className="text-lg">اختر قسماً من القائمة اليمنى</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Edit Item Modal */}
+      {editingItem && (() => {
+        const cat = localCategories[editingItem.catIndex];
+        const item = cat?.items[editingItem.itemIndex];
+        if (!cat || !item || item._deleted) return null;
+        return (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setEditingItem(null)}>
+            <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-[#1A1A2E]">تعديل الطبق</h2>
+                  <button onClick={() => setEditingItem(null)} className="p-2 hover:bg-gray-100 rounded-lg">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">رابط الصورة</label>
+                  <input type="url" value={item.photo ?? ""} onChange={(e) => updateItem(editingItem.catIndex, editingItem.itemIndex, "photo", e.target.value || null)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6B35]" placeholder="https://..." dir="ltr" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">اسم الطبق <span className="text-red-500">*</span></label>
+                  <input type="text" value={item.name} onChange={(e) => updateItem(editingItem.catIndex, editingItem.itemIndex, "name", e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6B35]" placeholder="اسم الطبق" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">الوصف</label>
+                  <textarea value={item.description ?? ""} onChange={(e) => updateItem(editingItem.catIndex, editingItem.itemIndex, "description", e.target.value || null)} rows={3}
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6B35] resize-none" placeholder="وصف الطبق..." />
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm font-bold text-gray-700 mb-1.5">السعر (دج) <span className="text-red-500">*</span></label>
+                    <input type="number" min="0" value={item.price || ""} onChange={(e) => updateItem(editingItem.catIndex, editingItem.itemIndex, "price", parseInt(e.target.value) || 0)}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6B35]" placeholder="0" dir="ltr" />
+                  </div>
+                  <div className="flex items-end pb-1">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <div className={`relative w-11 h-6 rounded-full transition-colors ${item.is_available ? "bg-green-500" : "bg-gray-300"}`}
+                        onClick={() => updateItem(editingItem.catIndex, editingItem.itemIndex, "is_available", !item.is_available)}>
+                        <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${item.is_available ? "right-0.5" : "right-5.5"}`} style={{ right: item.is_available ? "2px" : "22px" }} />
+                      </div>
+                      <span className="text-sm text-gray-700">{item.is_available ? "متوفر" : "غير متوفر"}</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setEditingItem(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm">
+                    إلغاء
+                  </button>
+                  <button onClick={() => setEditingItem(null)} className="flex-1 py-2.5 bg-[#FF6B35] text-white rounded-xl font-bold hover:bg-[#e55a2b] transition-colors text-sm">
+                    تم
+                  </button>
+                </div>
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

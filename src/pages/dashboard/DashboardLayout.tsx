@@ -1,75 +1,45 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useState } from "react";
+import {
+  HomeIcon, UtensilsIcon, StoreIcon, BarChartIcon, StarIcon,
+  QrCodeIcon, SettingsIcon, LogOutIcon, BellIcon,
+} from "@/lib/icons";
 
-function HomeIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9,22 9,12 15,12 15,22" />
-    </svg>
-  );
-}
-
-function UserIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-
-function UtensilsIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
-      <path d="M7 2v20" />
-      <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7" />
-    </svg>
-  );
-}
-
-function LogOutIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16,17 21,12 16,7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
-  );
-}
-
-function MenuIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="4" y1="12" x2="20" y2="12" />
-      <line x1="4" y1="6" x2="20" y2="6" />
-      <line x1="4" y1="18" x2="20" y2="18" />
-    </svg>
-  );
-}
-
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
-const navItems = [
-  { to: "/dashboard", icon: HomeIcon, label: "لوحة التحكم", exact: true },
-  { to: "/dashboard/profile", icon: UserIcon, label: "ملف المطعم" },
-  { to: "/dashboard/menu", icon: UtensilsIcon, label: "بناء القائمة" },
+const sidebarItems = [
+  { to: "/dashboard", icon: HomeIcon, label: "نظرة عامة", exact: true },
+  { to: "/dashboard/menu", icon: UtensilsIcon, label: "قائمتي" },
+  { to: "/dashboard/profile", icon: StoreIcon, label: "ملف المطعم" },
+  { to: "/dashboard/analytics", icon: BarChartIcon, label: "الإحصائيات" },
+  { to: "/dashboard/reviews", icon: StarIcon, label: "التقييمات" },
+  { to: "/dashboard/qrcode", icon: QrCodeIcon, label: "رمز QR" },
+  { to: "/dashboard/settings", icon: SettingsIcon, label: "الإعدادات" },
 ];
+
+const mobileBottomItems = [
+  { to: "/dashboard", icon: HomeIcon, label: "الرئيسية", exact: true },
+  { to: "/dashboard/menu", icon: UtensilsIcon, label: "القائمة" },
+  { to: "/dashboard/analytics", icon: BarChartIcon, label: "الإحصائيات" },
+  { to: "/dashboard/reviews", icon: StarIcon, label: "التقييمات" },
+  { to: "/dashboard/settings", icon: SettingsIcon, label: "إعدادات" },
+];
+
+const pageTitles: Record<string, string> = {
+  "/dashboard": "نظرة عامة",
+  "/dashboard/menu": "قائمتي",
+  "/dashboard/profile": "ملف المطعم",
+  "/dashboard/analytics": "الإحصائيات",
+  "/dashboard/reviews": "التقييمات",
+  "/dashboard/qrcode": "رمز QR",
+  "/dashboard/settings": "الإعدادات",
+};
 
 export default function DashboardLayout() {
   const { profile, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const basePath = "/" + (location.pathname.split("/").filter(Boolean)[1] ?? "");
+  const pageTitle = pageTitles[basePath] || pageTitles[location.pathname] || "لوحة التحكم";
 
   async function handleSignOut() {
     await signOut();
@@ -77,58 +47,116 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex" dir="rtl">
-      <aside className="hidden md:flex w-64 bg-[#1A1A2E] text-white flex-col">
+    <div className="min-h-screen bg-[#F8F8F8] flex flex-col md:flex-row" dir="rtl">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex lg:flex w-64 bg-[#1A1A2E] text-white flex-col fixed inset-y-0 right-0 z-30">
         <div className="p-6 border-b border-white/10">
           <Link to="/" className="text-xl font-bold text-[#FF6B35]">Menuly</Link>
-          <p className="text-xs text-gray-400 mt-1">{profile?.full_name}</p>
+          <p className="text-xs text-gray-400 mt-1 truncate">{profile?.full_name}</p>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => {
-            const active = item.exact ? location.pathname === item.to : location.pathname.startsWith(item.to);
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {sidebarItems.map((item) => {
+            const active = item.exact
+              ? location.pathname === item.to
+              : location.pathname.startsWith(item.to) && location.pathname !== "/dashboard";
             return (
-              <Link key={item.to} to={item.to} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${active ? "bg-[#FF6B35] text-white" : "text-gray-300 hover:bg-white/10"}`}>
-                <item.icon className="h-5 w-5" />
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sm font-medium ${
+                  active ? "bg-[#FF6B35] text-white" : "text-gray-300 hover:bg-white/10"
+                }`}
+              >
+                <item.icon className="h-5 w-5 flex-shrink-0" />
                 <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
         <div className="p-4 border-t border-white/10">
-          <button onClick={handleSignOut} className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-white/10 w-full">
-            <LogOutIcon className="h-5 w-5" />
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-white/10 w-full text-sm font-medium"
+          >
+            <LogOutIcon className="h-5 w-5 flex-shrink-0" />
             <span>تسجيل الخروج</span>
           </button>
         </div>
       </aside>
 
-      <div className="md:hidden fixed top-0 inset-x-0 z-50 bg-[#1A1A2E] text-white px-4 py-3 flex items-center justify-between">
+      {/* Mobile Top Bar */}
+      <div className="md:hidden fixed top-0 inset-x-0 z-40 bg-[#1A1A2E] text-white h-14 flex items-center justify-between px-4">
         <Link to="/" className="text-lg font-bold text-[#FF6B35]">Menuly</Link>
-        <button onClick={() => setMobileOpen(!mobileOpen)}>
-          {mobileOpen ? <XIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
-        </button>
+        <div className="flex items-center gap-3">
+          <button className="relative p-2">
+            <BellIcon className="h-5 w-5 text-gray-300" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-[#FF6B35] rounded-full" />
+          </button>
+          {profile?.full_name && (
+            <span className="text-xs text-gray-300 max-w-[80px] truncate">{profile.full_name}</span>
+          )}
+          {profile?.full_name && (
+            <div className="w-8 h-8 rounded-full bg-[#FF6B35] flex items-center justify-center text-white text-xs font-bold">
+              {profile.full_name.charAt(0)}
+            </div>
+          )}
+        </div>
       </div>
 
-      {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-[#1A1A2E] text-white pt-16">
-          <nav className="p-4 space-y-1">
-            {navItems.map((item) => (
-              <Link key={item.to} to={item.to} onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-white/10">
+      {/* Mobile Bottom Nav */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 h-16">
+        <div className="flex items-center justify-around h-full px-2">
+          {mobileBottomItems.map((item) => {
+            const active = item.exact
+              ? location.pathname === item.to
+              : location.pathname.startsWith(item.to) && location.pathname !== "/dashboard";
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex flex-col items-center gap-1 px-3 py-1 rounded-lg transition-colors ${
+                  active ? "text-[#FF6B35]" : "text-gray-400"
+                }`}
+              >
                 <item.icon className="h-5 w-5" />
-                <span>{item.label}</span>
+                <span className="text-[10px] font-medium">{item.label}</span>
               </Link>
-            ))}
-            <button onClick={handleSignOut} className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-white/10 w-full">
-              <LogOutIcon className="h-5 w-5" />
-              <span>تسجيل الخروج</span>
-            </button>
-          </nav>
+            );
+          })}
         </div>
-      )}
+      </nav>
 
-      <main className="flex-1 md:mr-0 mt-14 md:mt-0 p-6">
-        <Outlet />
-      </main>
+      {/* Main Content */}
+      <div className="flex-1 md:mr-64">
+        {/* Desktop Header */}
+        <header className="hidden md:flex items-center justify-between bg-white border-b border-gray-100 h-16 px-6 sticky top-0 z-20">
+          <h1 className="text-lg font-bold text-[#1A1A2E]">{pageTitle}</h1>
+          <div className="flex items-center gap-4">
+            <button className="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
+              <BellIcon className="h-5 w-5 text-gray-500" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#FF6B35] rounded-full" />
+            </button>
+            <div className="flex items-center gap-2">
+              {profile?.full_name && (
+                <span className="text-sm font-medium text-[#1A1A2E]">{profile.full_name}</span>
+              )}
+              {profile?.full_name && (
+                <div className="w-9 h-9 rounded-full bg-[#FF6B35] flex items-center justify-center text-white text-sm font-bold">
+                  {profile.full_name.charAt(0)}
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* Mobile Header */}
+        <div className="md:hidden h-14" />
+
+        {/* Page Content */}
+        <main className="p-4 sm:p-6 pb-24 md:pb-6">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
