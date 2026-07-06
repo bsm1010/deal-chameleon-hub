@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,8 +11,16 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const { data: restaurant } = useOwnerRestaurant(user?.id);
 
-  const [fullName, setFullName] = useState(profile?.full_name ?? "");
-  const [email, setEmail] = useState(user?.email ?? "");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    if (profile?.full_name) setFullName(profile.full_name);
+  }, [profile?.full_name]);
+
+  useEffect(() => {
+    if (user?.email) setEmail(user.email);
+  }, [user?.email]);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -24,9 +32,11 @@ export default function Settings() {
       const { error } = await supabase.from("profiles").update({ full_name: fullName.trim() }).eq("id", user.id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("تم تحديث الملف الشخصي");
       queryClient.invalidateQueries({ queryKey: ["owner-restaurant", user?.id] });
+      const { data } = await supabase.from("profiles").select("*").eq("id", user!.id).single();
+      if (data) queryClient.setQueryData(["profile", user?.id], data);
     },
     onError: () => toast.error("حدث خطأ أثناء التحديث"),
   });

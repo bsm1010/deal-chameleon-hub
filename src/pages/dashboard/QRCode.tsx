@@ -24,8 +24,8 @@ export default function QRCodePage() {
       width: 300,
       margin: 2,
       color: { dark: "#1A1A2E", light: "#ffffff" },
-    });
-  }, [qrUrl, showLabel]);
+    }).catch(() => {});
+  }, [qrUrl]);
 
   function downloadPNG() {
     if (!canvasRef.current || !restaurant) return;
@@ -130,7 +130,7 @@ export default function QRCodePage() {
           </div>
 
           <p className="text-xs text-gray-400 text-center">
-            QR ي linked مباشرة إلى صفحة مطعمك العامة
+            QR يرتبط مباشرة إلى صفحة مطعمك العامة
           </p>
         </div>
       </div>
@@ -142,7 +142,7 @@ export default function QRCodePage() {
           <div className="w-[200px] h-[200px] bg-white rounded-lg flex items-center justify-center mb-4 shadow-inner">
             <canvas ref={(el) => {
               if (el && qrUrl) {
-                QRCodeLib.toCanvas(el, qrUrl, { width: 180, margin: 1, color: { dark: "#1A1A2E", light: "#ffffff" } });
+                QRCodeLib.toCanvas(el, qrUrl, { width: 180, margin: 1, color: { dark: "#1A1A2E", light: "#ffffff" } }).catch(() => {});
               }
             }} />
           </div>

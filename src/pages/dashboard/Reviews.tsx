@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -60,7 +60,7 @@ export default function Reviews() {
   const { data: restaurant } = useOwnerRestaurant(user?.id);
   const { data: reviews = [] } = useReviews(restaurant?.id);
 
-  const reviewIds = reviews.map((r) => r.id);
+  const reviewIds = useMemo(() => reviews.map((r) => r.id), [reviews]);
   const { data: repliesMap = {} } = useReviewReplies(reviewIds);
 
   const [filter, setFilter] = useState<"all" | "5" | "4" | "3">("all");

@@ -34,7 +34,7 @@ export default function MenuBuilder() {
   const [editingItem, setEditingItem] = useState<{ catIndex: number; itemIndex: number } | null>(null);
 
   useEffect(() => {
-    if (remoteCategories && remoteItems) {
+    if (remoteCategories && remoteItems && !hasChanges) {
       const cats: LocalCategory[] = remoteCategories.map((cat) => ({
         ...cat,
         items: remoteItems

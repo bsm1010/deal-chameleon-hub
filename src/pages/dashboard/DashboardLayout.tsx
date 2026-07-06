@@ -38,8 +38,7 @@ export default function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const basePath = "/" + (location.pathname.split("/").filter(Boolean)[1] ?? "");
-  const pageTitle = pageTitles[basePath] || pageTitles[location.pathname] || "لوحة التحكم";
+  const pageTitle = pageTitles[location.pathname] || "لوحة التحكم";
 
   async function handleSignOut() {
     await signOut();
