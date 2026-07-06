@@ -1,29 +1,20 @@
-import { Toaster } from "sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "@/hooks/useAuth";
-import AppRouter from "@/router";
-import "@/lib/i18n";
-import "@/styles/globals.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      retry: 1,
-    },
-  },
-});
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster position="top-center" richColors />
-      <AuthProvider>
-        <AppRouter />
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
-
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+              <h1 className="text-4xl font-bold text-gray-900">
+                Menuly coming soon
+              </h1>
+            </div>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
+}

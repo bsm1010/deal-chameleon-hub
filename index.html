@@ -3,67 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Arabic:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <title>معلم Moualim — منصة التعليم الجزائرية</title>
-    <meta name="description" content="معلم - منصة التعليم الجزائرية الأولى. دروس فيديو وحصص مباشرة في جميع المواد من الابتدائي إلى الجامعة.">
-    <meta name="author" content="Moualim" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="معلم Moualim — منصة التعليم الجزائرية">
-    <meta property="og:description" content="منصة التعليم الجزائرية الأولى. دروس فيديو وحصص مباشرة في جميع المواد.">
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="معلم Moualim — منصة التعليم الجزائرية">
-    <meta name="twitter:description" content="منصة التعليم الجزائرية الأولى. دروس فيديو وحصص مباشرة في جميع المواد.">
+    <title>Menuly</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <script>
-      // Remove Lovable widget/badge injected by hosting platform
-      (function() {
-        function removeLovableWidget() {
-          document.querySelectorAll('a, div, button').forEach(function(el) {
-            var text = (el.textContent || '').toLowerCase();
-            var href = (el.getAttribute('href') || '').toLowerCase();
-            var cls = (el.className || '').toLowerCase().toString();
-            var isLovable = (
-              text.includes('lovable') ||
-              text.includes('edit with') ||
-              text.includes('built with') ||
-              href.includes('lovable.dev') ||
-              href.includes('gptengineer') ||
-              cls.includes('lovable')
-            );
-            if (isLovable) {
-              el.remove();
-            }
-          });
-          // Also remove fixed bottom-right elements that look like badges
-          document.querySelectorAll('[style]').forEach(function(el) {
-            var style = el.getAttribute('style') || '';
-            if (style.match(/position\s*:\s*fixed/i) && style.match(/bottom\s*:/i) && style.match(/right\s*:/i) && style.match(/z-index\s*:\s*(9\d{4,}|10\d{4,})/i)) {
-              el.remove();
-            }
-          });
-        }
-        // Run on load
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', removeLovableWidget);
-        } else {
-          removeLovableWidget();
-        }
-        // Run continuously for 10 seconds to catch dynamically injected elements
-        var attempts = 0;
-        var interval = setInterval(function() {
-          removeLovableWidget();
-          attempts++;
-          if (attempts >= 20) clearInterval(interval);
-        }, 500);
-        // Also use MutationObserver for ongoing monitoring
-        var observer = new MutationObserver(function() {
-          removeLovableWidget();
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>
